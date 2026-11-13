@@ -1,4 +1,6 @@
+const dns = require("dns").promises;
 const express = require("express");
+const net = require("net");
 const path = require("path");
 
 const app = express();
@@ -27,6 +29,88 @@ function extract(html) {
   };
 }
 
+function blocked(message) {
+  const err = new Error(message);
+  err.blocked = true;
+  return err;
+}
+
+function isPrivateAddress(address) {
+  const mapped = String(address).toLowerCase().startsWith("::ffff:") ? String(address).slice(7) : String(address);
+  const kind = net.isIP(mapped);
+  if (kind === 4) {
+    const [a, b] = mapped.split(".").map(Number);
+    if (a === 0 || a === 10 || a === 127) return true;
+    if (a === 169 && b === 254) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true;
+    return false;
+  }
+  if (kind === 6) {
+    const ip = mapped.toLowerCase();
+    if (ip === "::1" || ip === "::") return true;
+    if (ip.startsWith("fc") || ip.startsWith("fd")) return true;
+    if (/^fe[89ab]/.test(ip)) return true;
+    return false;
+  }
+  return true;
+}
+
+function isBlockedName(hostname, requestHost) {
+  const name = hostname.toLowerCase().replace(/\.$/, "");
+  const own = String(requestHost || "").split(":")[0].toLowerCase();
+  if (!name || name === own) return true;
+  if (name === "localhost" || name.endsWith(".localhost") || name.endsWith(".local")) return true;
+  if (name === "metadata.google.internal" || name.endsWith(".internal")) return true;
+  return false;
+}
+
+async function assertPublic(hostname) {
+  if (net.isIP(hostname)) {
+    if (isPrivateAddress(hostname)) throw blocked("private");
+    return;
+  }
+  let records;
+  try {
+    records = await dns.lookup(hostname, { all: true, verbatim: true });
+  } catch (err) {
+    if (err.code === "ENOTFOUND") throw err;
+    throw blocked("dns");
+  }
+  if (records.length === 0 || records.some((record) => isPrivateAddress(record.address))) {
+    throw blocked("private");
+  }
+}
+
+async function fetchPublic(rawUrl, requestHost) {
+  let current = rawUrl;
+  for (let hop = 0; hop < 3; hop += 1) {
+    let parsed;
+    try {
+      parsed = new URL(current);
+    } catch {
+      throw blocked("url");
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw blocked("scheme");
+    if (parsed.username || parsed.password) throw blocked("auth");
+    if (isBlockedName(parsed.hostname, requestHost)) throw blocked("host");
+    await assertPublic(parsed.hostname);
+    const response = await fetch(parsed.href, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(8000)
+    });
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("location");
+      if (!location) throw blocked("redirect");
+      current = new URL(location, parsed).href;
+      continue;
+    }
+    return { url: parsed.href, status: response.status, ...extract(await response.text()) };
+  }
+  throw blocked("redirect");
+}
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
@@ -47,11 +131,12 @@ app.post("/preview", async (req, res) => {
     return res.status(400).send(page("Paste a URL.", saved, null));
   }
   try {
-    const response = await fetch(url);
-    const body = await response.text();
-    const card = { url, ...extract(body), status: response.status };
+    const card = await fetchPublic(url, req.get("host"));
     res.send(page(null, saved, card));
   } catch (err) {
+    if (err.blocked) {
+      return res.status(400).send(page("Use a public http or https URL.", saved, null));
+    }
     res.status(502).send(page("Could not fetch that URL.", saved, null));
   }
 });
@@ -106,7 +191,15 @@ function page(error, cards, fresh) {
 </html>`;
 }
 
-const port = Number(process.env.PORT || 3000);
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Preview listening on ${port}`);
-});
+function start(port = process.env.PORT || 3000) {
+  return app.listen(port, "0.0.0.0");
+}
+
+if (require.main === module) {
+  const server = start();
+  server.on("listening", () => {
+    console.log(`Preview listening on ${server.address().port}`);
+  });
+}
+
+module.exports = { app, start };

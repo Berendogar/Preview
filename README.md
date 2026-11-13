@@ -1,5 +1,8 @@
 # Preview
 
+Case Study 8, Beren Dogar. The architecture, the bug, and the patch are in
+[SUBMISSION.md](SUBMISSION.md).
+
 Club link cards. Paste a URL, Preview fetches the page, and you get a title and the first lines. Saved cards stay on the home page.
 
 Express and a static page. No database.
