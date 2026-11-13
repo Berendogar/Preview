@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preview</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="top">
+      <a class="brand" href="/"><span class="mark">Pv</span><span><strong>Preview</strong><em>Club link cards</em></span></a>
+    </header>
+    <main>
+      <section class="hero">
+        <h1>Paste a club URL. Get a card.</h1>
+        <p class="lede">Preview fetches the page and keeps the title and the first lines. No account required.</p>
+      </section>
+      <form method="post" action="/preview" class="stack">
+        <label><span>URL</span><input name="url" type="url" placeholder="https://..." required></label>
+        <button type="submit">Preview</button>
+      </form>
+      <h2 class="section">Saved cards</h2>
+      <article class="card"><h2>Robotics club</h2><p>Shop hours, ride board, and the missing hex-driver thread.</p><p class="url">https://example.edu/robotics</p></article>
+      <article class="card"><h2>Film society</h2><p>Thursday screening in the basement theater. Bring a chair.</p><p class="url">https://example.edu/film</p></article>
+    </main>
+    <footer>Preview is unofficial. It only reads what the URL returns.</footer>
+  </div>
+</body>
+</html>

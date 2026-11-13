@@ -1,0 +1,27 @@
+:root {
+  --ink: #1b1a17;
+  --muted: #6b645c;
+  --paper: #f3efe6;
+  --line: #e0d8cc;
+  --inkblue: #243044;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #ebe4d8; color: var(--ink); font-family: Georgia, "Iowan Old Style", serif; }
+.shell { max-width: 760px; margin: 0 auto; padding: 24px 20px 64px; }
+.top { border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.brand { display: flex; gap: 12px; align-items: center; color: inherit; text-decoration: none; }
+.mark { width: 40px; height: 40px; display: grid; place-items: center; background: var(--inkblue); color: #fff; font-family: "Avenir Next", sans-serif; font-weight: 700; }
+.brand em { display: block; font-style: normal; color: var(--muted); font-size: 0.85rem; }
+h1 { font-weight: 500; font-size: clamp(1.8rem, 4vw, 2.6rem); }
+.lede, .url { color: var(--muted); }
+.stack { display: grid; gap: 10px; max-width: 520px; }
+.stack label { display: grid; gap: 4px; }
+.stack span { font-family: "Avenir Next", sans-serif; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+input { font: inherit; padding: 10px 12px; border: 1px solid var(--line); background: #fff; }
+button { font-family: "Avenir Next", sans-serif; background: var(--inkblue); color: #fff; border: 0; padding: 8px 14px; width: fit-content; cursor: pointer; }
+.card { background: #fffaf3; border: 1px solid var(--line); padding: 16px; margin: 12px 0; }
+.card.fresh { border-color: var(--inkblue); }
+.status { font-family: "Avenir Next", sans-serif; color: var(--muted); font-size: 0.8rem; }
+.section { margin-top: 28px; font-weight: 500; }
+.flash { background: #f0d9c8; padding: 10px 12px; }
+footer { margin-top: 40px; color: var(--muted); }
